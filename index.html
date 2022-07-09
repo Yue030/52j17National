@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="./js/jquery-3.4.1.js"></script>
+    <script src="./js/vue.js"></script>
+</head>
+
+<script type="text/x-template" id="LoginFormTemplate">
+    <form @submit.prevent="handleSubmit" method="post">
+        <div>帳號：<input type="text" v-model="account"></div>
+        <div>密碼：<input type="password" v-model="password"></div>
+        <div>圖片驗證碼：<input type="text" v-model="userInputVerNum"></div>
+        <div>
+            <div>{{ verNum }}</div>
+            <button type="button" @click="refreshNum">重設驗證碼</button>
+        </div>
+        <div>
+            <input type="submit">
+            <button type="button" @click="reset">重設</button>
+        </div>
+    </form>
+</script>
+
+<script type="text/x-template" id="MessageBoardFormTemplate">
+    <form @submit.prevent="handleSubmit" method="post">
+        <div>姓名：<input type="text" v-model="name" required></div>
+        <div>E-mail：<input :type="show_mail ? 'email' : 'password'" v-model="email" required>顯示：<input type="checkbox" v-model="show_mail"></div>
+        <div>電話：<input :type="show_phone ? 'text' : 'password'" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required>顯示：<input type="checkbox" v-model="show_phone"></div>
+        <div>留言內容：
+            <textarea cols="30" rows="10" v-model="msg" required></textarea>
+            <input type="file" @change="onFileChange">
+        </div>
+        <div>留言序號：<input type="text" v-model="serial" maxlength="4" required></div>
+        <div>
+            <input type="submit">
+        </div>
+    </form>
+</script>
+
+<script type="text/x-template" id="MessageBoardEditFormTemplate">
+    <form @submit.prevent="handleSubmit" method="post">
+        <div>姓名：<input type="text" v-model="name" required></div>
+        <div>E-mail：<input :type="show_mail ? 'email' : 'password'" v-model="email" required>顯示：<input type="checkbox" v-model="show_mail"></div>
+        <div>電話：<input :type="show_phone ? 'text' : 'password'" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required>顯示：<input type="checkbox" v-model="show_phone"></div>
+        <div>留言內容：
+            <textarea cols="30" rows="10" v-model="msg" required></textarea>
+        </div>
+        <div v-if="$root.isAdmin">管理員回覆：
+            <textarea cols="30" rows="10" v-model="reply"></textarea>
+        </div>
+        <div>
+            <input type="submit">
+        </div>
+    </form>
+</script>
+
+<script type="text/x-template" id="MessageBoardListTemplate">
+    <div class="message-board-list">
+        <div class="message-comment" v-for="msg in msgs">
+            <div class="top" v-if="msg.msg.is_top">置頂留言</div>
+            <div class="name">姓名：{{ msg.msg.name }}</div>
+            <div class="msg-content">內容：{{ msg.msg.del ? "已刪除" : msg.msg.msg }}</div>
+            <div class="created">發表於{{ msg.msg.created_time }}</div>
+            <div class="updated" v-if="msg.msg.updated_time != msg.msg.created_time">{{ msg.msg.del ? "刪除" : "修改" }}於{{ msg.msg.updated_time }}</div>
+            <div class="phone" v-if="msg.msg.show_phone && !msg.msg.del">電話號碼：{{ msg.msg.phone }}</div>
+            <div class="email" v-if="msg.msg.show_email && !msg.msg.del">電子郵件：{{ msg.msg.email }}</div>
+            <div class="image" v-if="!msg.msg.del && msg.msg.avatar_url != null"><img :src="'/user_avatar/' + msg.msg.avatar_url" alt="" width="128px" height="128px"></div>
+            <div class="reply" v-if="msg.msg.reply.trim().length > 0">
+                <div>管理員回復</div>
+                <div>{{ msg.msg.reply }}</div>
+            </div>
+            <div class="feature" v-if="$root.isAdmin || !msg.msg.del">
+                <div v-if="!$root.isAdmin">
+                    留言序號：
+                    <input type="text" v-model="msg.serial">
+                </div>
+                <div>
+                    <button v-if="$root.isAdmin" @click="top(msg)">置頂</button>
+                    <button v-if="!msg.msg.del" @click="edit(msg)">編輯</button>
+                    <button @click="del(msg)">刪除</button>
+                </div>
+            </div>
+
+            <message-board-edit-form v-if="msg.isEdit" @editmsg_event="processEditMsg" :msgdata="msg"></message-board-edit-form>
+            <hr>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template" id="MessageBoardTemplate">
+    <div>
+        <div class="header-msg">
+            <p v-if="$root.isAdmin">留言管理</p>
+            <p v-else>遊客留言板區塊</p>
+        </div>
+        <button v-if="!$root.isAdmin" @click="isShowAddMsgForm = !isShowAddMsgForm">
+            <p v-if="!isShowAddMsgForm">新增留言</p>
+            <p v-else>關閉留言表單</p>
+        </button>
+        <message-board-form v-if="isShowAddMsgForm" @addmsg_event="processAddMsg"></message-board-form>
+        <message-board-list ref="messageBoardListRef"></message-board-list>
+    </div>
+</script>
+
+<script type="text/x-template" id="MatchTemplate">
+    <div id="match">
+        <div class="header-news">
+            <p v-if="$root.isAdmin">賽制管理</p>
+            <p v-else>最新消息與賽制公告區塊</p>
+        </div>
+        <button v-if="!$root.isAdmin" @click="isShowAddPlayerForm = !isShowAddPlayerForm">
+            <p v-if="!isShowAddPlayerForm">玩家參賽</p>
+            <p v-else>關閉參賽表單</p>
+        </button>
+
+        <form v-if="isShowAddPlayerForm" @submit.prevent="handleSubmit" method="post">
+            <div>姓名：<input type="text" v-model="name" required></div>
+            <div>E-mail：<input type="email" v-model="email" required></div>
+            <div>電話：<input type="text" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required></div>
+            <input type="file" @change="onFileChange">
+            <div>
+                <input type="submit" value="參賽">
+            </div>
+        </form>
+
+        <div class="match-block">
+            <div class="match-item" v-for="match in matchs">
+                <img :src="'/match_img/' + match[0].img" width="128px" height="128px" alt="">
+                <span>{{ match[0].name }}</span>
+                <span> VS </span>
+                <img :src="'/match_img/' + match[1].img" width="128px" height="128px" alt="">
+                <span>{{ match[1].name }}</span>
+                <button v-if="$root.isAdmin" @click="unpair(match[0].team_id)">解除配對</button>
+            </div>
+            <div class="match-item" v-for="alone in alones">
+                <img :src="'/match_img/' + alone.img" width="128px" height="128px" alt="">
+                <span>{{ alone.name }}，配對中</span>
+            </div>
+            <button v-if="$root.isAdmin" @click="pair">亂數配對</button>
+        </div>
+    </div>
+</script>
+
+<body class="container">
+    <div id="app">
+        <div v-if="isAdmin">管理者模式</div>
+        <nav>
+            <div>玩家留言</div>
+            <div>玩家參賽</div>
+            <div>網站管理</div>
+        </nav>
+
+        <login-form v-if="!isAdmin" @update_admin_status="updateAdminStatus"></login-form>
+        <message-board></message-board>
+
+        <match></match>
+    </div>
+</body>
+
+<script>
+    const loginFormComponent = {
+        template: "#LoginFormTemplate",
+        data() {
+            return {
+                verNum: "",
+                userInputVerNum: "",
+                account: "",
+                password: ""
+            }
+        },
+        mounted() {
+            this.refreshNum();
+        },
+        methods: {
+            refreshNum: function () {
+                this.verNum = Math.round(Math.random() * 9000) + 1000;
+            },
+            handleSubmit: function () {
+                const _this = this;
+                if (_this.userInputVerNum != _this.verNum) {
+                    alert("驗證碼錯誤")
+                    return;
+                }
+
+                let data = {
+                    "acc": _this.account,
+                    "pw": _this.password
+                }
+                $.post("/api/Login.php", data)
+                    .done(res => {
+                        let result = JSON.parse(res);
+
+                        if (!result.status) {
+                            alert("帳號密碼錯誤");
+                            return;
+                        }
+
+                        _this.$emit("update_admin_status", true);
+                    });
+            },
+            reset: function () {
+                this.userInputVerNum = "";
+                this.account = "";
+                this.password = "";
+                this.refreshNum();
+            }
+        }
+    };
+
+    const messageBoardFormComponent = {
+        template: "#MessageBoardFormTemplate",
+        data() {
+            return {
+                name: "",
+                email: "",
+                phone: "",
+                msg: "",
+                avatar: null,
+                serial: "",
+                show_mail: true,
+                show_phone: true
+            }
+        },
+        methods: {
+            handleSubmit: function () {
+                const _this = this;
+
+                if (_this.serial.length != 4) {
+                    alert("留言序號長度必須為4");
+                    return;
+                }
+
+                let formData = new FormData();
+                formData.append("name", _this.name);
+                formData.append("email", _this.email);
+                formData.append("phone", _this.phone);
+                formData.append("msg", _this.msg);
+                formData.append("serial", _this.serial);
+                formData.append("avatar", _this.avatar);
+                formData.append("show_mail", _this.show_mail | 0);
+                formData.append("show_phone", _this.show_phone | 0);
+
+                $.ajax({
+                    url: "/api/AddMsg.php",
+                    type: "post",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: res => {
+                        alert("新增成功");
+                        _this.$emit("addmsg_event");
+                    }
+                });
+            },
+            onFileChange: function (e) {
+                let files = e.target.files || e.dataTransfer.files;
+                if (!files.length)
+                    return;
+                this.avatar = files[0];
+                console.log(this.avatar);
+            }
+        }
+    }
+
+    const messageBoardEditFormComponent = {
+        template: "#MessageBoardEditFormTemplate",
+        props: ["msgdata"],
+        data() {
+            return {
+                id: 0,
+                name: "",
+                email: "",
+                phone: "",
+                msg: "",
+                show_mail: true,
+                show_phone: true,
+                reply: ""
+            }
+        },
+        mounted() {
+            let tmp = this.msgdata.msg;
+            this.id = tmp.id;
+            this.name = tmp.name;
+            this.email = tmp.email;
+            this.phone = tmp.phone;
+            this.msg = tmp.msg;
+            this.show_mail = tmp.show_email;
+            this.show_phone = tmp.show_phone;
+            this.reply = tmp.reply;
+        },
+        methods: {
+            handleSubmit: function () {
+                const _this = this;
+                let data = {
+                    id: this.id,
+                    name: this.name,
+                    email: this.email,
+                    phone: this.phone,
+                    msg: this.msg,
+                    show_email: this.show_mail | 0,
+                    show_phone: this.show_phone | 0,
+                    reply: this.reply
+                };
+                $.post("/api/EditMsg.php", data)
+                    .done(res => {
+                        _this.$emit("editmsg_event");
+                    });
+                console.log(data);
+            }
+        }
+    }
+
+
+    const messageBoardListComponent = {
+        template: "#MessageBoardListTemplate",
+        data() {
+            return {
+                msgs: []
+            }
+        },
+        mounted() {
+            this.refreshMsgs();
+        },
+        methods: {
+            refreshMsgs: function () {
+                const _this = this;
+                $.get("/api/GetMessageBoard.php").done(res => {
+                    _this.msgs.splice(0);
+                    $.each(JSON.parse(res), (idx, item) => {
+                        let result = {
+                            msg: item,
+                            serial: "",
+                            isEdit: false
+                        };
+                        _this.msgs.push(result);
+                    })
+                });
+            },
+            processEditMsg: function () {
+                this.refreshMsgs();
+            },
+            top: function (msg) {
+                const _this = this;
+                $.post("/api/TopMsg.php", { id: msg.msg.id })
+                    .done(res => _this.refreshMsgs());
+            },
+            edit: function (msg) {
+                if (!this.$root.isAdmin && msg.serial != msg.msg.serial) {
+                    alert("留言序號錯誤");
+                    return;
+                }
+
+                msg.isEdit = true;
+            },
+            del: function (msg) {
+                const _this = this;
+                if (!_this.$root.isAdmin && msg.serial != msg.msg.serial) {
+                    alert("留言序號錯誤");
+                    return;
+                }
+
+                if (!confirm("確定要刪除本筆留言嗎")) {
+                    return;
+                }
+
+                $.post("/api/DeleteMsg.php", { id: msg.msg.id, isAdmin: _this.$root.isAdmin | 0 })
+                    .done(res => _this.refreshMsgs());
+            }
+        }
+    }
+
+    const messageBoardComponent = {
+        template: "#MessageBoardTemplate",
+        data() {
+            return {
+                isShowAddMsgForm: false
+            }
+        },
+        methods: {
+            processAddMsg: function () {
+                this.isShowAddMsgForm = false;
+                console.log(this.$refs.messageBoardListRef);
+                this.$refs.messageBoardListRef.refreshMsgs();
+            }
+        }
+    }
+
+    const matchComponent = {
+        template: "#MatchTemplate",
+        data() {
+            return {
+                matchs: [],
+                alones: [],
+                isShowAddPlayerForm: false,
+                name: "",
+                email: "",
+                phone: "",
+                img: null
+            }
+        },
+        mounted() {
+            this.refresh();
+        },
+        methods: {
+            refresh: function () {
+                const _this = this;
+                _this.matchs.splice(0);
+                _this.alones.splice(0);
+                $.get("/api/GetPlayerTeams.php")
+                    .done(res => {
+                        let result = JSON.parse(res);
+                        $.each(Object.keys(result), (idx, val) => {
+                            if (val == "0") {
+                                for (const v of result[val]) {
+                                    _this.alones.push(v);
+                                }
+                                return;
+                            }
+
+                            _this.matchs.push(result[val]);
+                        })
+                    })
+            },
+            pair: function () {
+                const _this = this;
+                $.post("/api/PairTeams.php")
+                    .done(res => _this.refresh())
+            },
+            unpair: function (team_id) {
+                const _this = this;
+                $.post("/api/UnpairTeams.php", { id: team_id })
+                    .done(res => _this.refresh())
+            },
+            onFileChange: function (e) {
+                let files = e.target.files || e.dataTransfer.files;
+                if (!files.length)
+                    return;
+                this.img = files[0];
+            },
+            handleSubmit: function () {
+                const _this = this;
+
+                if (_this.img == null) {
+                    alert("請上傳頭像");
+                    return;
+                }
+
+                let formData = new FormData();
+                formData.append("name", _this.name);
+                formData.append("email", _this.email);
+                formData.append("phone", _this.phone);
+                formData.append("img", _this.img);
+
+                $.ajax({
+                    url: "/api/AddMatchPlayer.php",
+                    type: "post",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: res => {
+                        alert("新增成功");
+                        _this.isShowAddPlayerForm = false;
+                        _this.name = "";
+                        _this.email = "";
+                        _this.phone = "";
+                        _this.img = null;
+                        _this.pair();
+                        _this.refresh();
+                    }
+                });
+            }
+        }
+    }
+
+    Vue.component("login-form", loginFormComponent);
+    Vue.component("message-board-form", messageBoardFormComponent);
+    Vue.component("message-board-edit-form", messageBoardEditFormComponent);
+    Vue.component("message-board-list", messageBoardListComponent);
+    Vue.component("message-board", messageBoardComponent);
+    Vue.component("match", matchComponent);
+
+    const vue = new Vue({
+        el: "#app",
+        data() {
+            return {
+                isAdmin: false
+            }
+        },
+        methods: {
+            updateAdminStatus: function (status) {
+                this.isAdmin = status;
+            }
+        }
+    });
+</script>
+
+</html>
