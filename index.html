@@ -5,165 +5,362 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./css/style.css">
+    <title>Shanghai Battle!</title>
     <script src="./js/jquery-3.4.1.js"></script>
+    <script src="./lib/bootstrap/bootstrap.js"></script>
     <script src="./js/vue.js"></script>
+    <link rel="stylesheet" href="./lib/fontawesome/fontawesome.css">
+    <link rel="stylesheet" href="./lib/bootstrap/bootstrap.css">
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <script type="text/x-template" id="LoginFormTemplate">
-    <form @submit.prevent="handleSubmit" method="post">
-        <div>帳號：<input type="text" v-model="account"></div>
-        <div>密碼：<input type="password" v-model="password"></div>
-        <div>圖片驗證碼：<input type="text" v-model="userInputVerNum"></div>
-        <div>
-            <div>{{ verNum }}</div>
-            <button type="button" @click="refreshNum">重設驗證碼</button>
-        </div>
-        <div>
-            <input type="submit">
-            <button type="button" @click="reset">重設</button>
-        </div>
-    </form>
+    <div class="d-flex justify-content-center align-items-center section">
+        <form id="loginForm" @submit.prevent="handleSubmit">
+            <h1>網站管理</h1>
+
+            <div class="input-area">
+                <div class="input-boxs">
+                    <div class="input-box">
+                        <input id="acc" type="text" v-model="account" required>
+                        <label for="acc">帳號</label>
+                    </div>
+                    <div class="input-box">
+                        <input id="pw" type="password" v-model="password" required>
+                        <label for="pw">密碼</label>
+                    </div>
+                    <div class="input-box">
+                        <input id="code" type="text" v-model="userInputVerNum" required>
+                        <label for="code">圖片驗證</label>
+                    </div>
+                    <div class="verNumImg">
+                        <img :src="verNum" @click="refreshNum">
+                        <p><- 點擊可刷新驗證碼</p>
+                    </div>
+                </div>
+
+                <div class="input-button">
+                    <input class="btn btn-danger" type="submit" value="送出">
+                </div>
+            </div>
+        </form>
+    </div>
 </script>
 
 <script type="text/x-template" id="MessageBoardFormTemplate">
-    <form @submit.prevent="handleSubmit" method="post">
-        <div>姓名：<input type="text" v-model="name" required></div>
-        <div>E-mail：<input :type="show_mail ? 'email' : 'password'" v-model="email" required>顯示：<input type="checkbox" v-model="show_mail"></div>
-        <div>電話：<input :type="show_phone ? 'text' : 'password'" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required>顯示：<input type="checkbox" v-model="show_phone"></div>
-        <div>留言內容：
-            <textarea cols="30" rows="10" v-model="msg" required></textarea>
-            <input type="file" @change="onFileChange">
-        </div>
-        <div>留言序號：<input type="text" v-model="serial" maxlength="4" required></div>
-        <div>
-            <input type="submit">
-        </div>
-    </form>
-</script>
+    <form class="section-form" @submit.prevent="handleSubmit">
+        <h1>{{ isEdit ? "編輯" : "新增" }}你的留言</h1>
 
-<script type="text/x-template" id="MessageBoardEditFormTemplate">
-    <form @submit.prevent="handleSubmit" method="post">
-        <div>姓名：<input type="text" v-model="name" required></div>
-        <div>E-mail：<input :type="show_mail ? 'email' : 'password'" v-model="email" required>顯示：<input type="checkbox" v-model="show_mail"></div>
-        <div>電話：<input :type="show_phone ? 'text' : 'password'" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required>顯示：<input type="checkbox" v-model="show_phone"></div>
-        <div>留言內容：
-            <textarea cols="30" rows="10" v-model="msg" required></textarea>
-        </div>
-        <div v-if="$root.isAdmin">管理員回覆：
-            <textarea cols="30" rows="10" v-model="reply"></textarea>
-        </div>
-        <div>
-            <input type="submit">
+        <div class="input-area">
+            <div class="input-boxs">
+                <div class="input-box">
+                    <input id="message-name" type="text" v-model="name" required>
+                    <label for="message-name">玩家姓名</label>
+                </div>
+                <div class="input-box hideable">
+                    <input id="message-email" :type="show_mail ? 'text' : 'password'" v-model="email" required>
+                    <label for="message-email">E-mail</label>
+                    <div class="hide-toggle" @click="show_mail = !show_mail">
+                        <i class="fas fa-eye fa-lg" v-if="show_mail"></i>
+                        <i class="fas fa-eye-slash fa-lg" v-else></i>
+                    </div>
+                </div>
+                <div class="input-box hideable">
+                    <input id="message-phone" :type="show_phone ? 'text' : 'password'" v-model="phone" required>
+                    <label for="message-phone">連絡電話</label>
+                    <div class="hide-toggle" @click="show_phone = !show_phone">
+                        <i class="fas fa-eye fa-lg" v-if="show_phone"></i>
+                        <i class="fas fa-eye-slash fa-lg" v-else></i>
+                    </div>
+                </div>
+                <div class="input-box">
+                    <input id="message-code" type="number" v-model="serial" maxlength="4" required>
+                    <label for="message-code">留言序號</label>
+                </div>
+                <div class="file-input-box">
+                    <div class="box">
+                        <label class="btn">
+                            <input type="file"
+                                accept="image/png, image/gif, image/jpeg" @change="onFileChange">
+                            <i class="fas fa-image"></i>上傳圖片</label>
+                        <p>{{ imgtext }}</p>
+                    </div>
+
+                    <div class="preview">
+                        <img id="preview_img" v-if="avatar_url != ''" :src="avatar_url" alt="">
+                    </div>
+                </div>
+                <div class="textarea-input-area" v-if="$root.isAdmin && msgdata != undefined">
+                    <div class="textarea-input-box">
+                        <label for="message-comment">留言內容</label>
+                        <textarea id="message-comment" rows="4" v-model="msg" required></textarea>
+                    </div>
+                    <div class="textarea-input-box">
+                        <label for="message-reply">管理者回復</label>
+                        <textarea id="message-reply" rows="4" v-model="reply"></textarea>
+                    </div>
+                </div>
+                <div class="textarea-input-box" v-else>
+                    <label for="message-comment">留言內容</label>
+                    <textarea id="message-comment" rows="4" v-model="msg" required></textarea>
+                </div>
+            </div>
+
+            <div class="input-button">
+                <input class="btn btn-danger" type="submit" value="送出">
+            </div>
         </div>
     </form>
 </script>
 
 <script type="text/x-template" id="MessageBoardListTemplate">
-    <div class="message-board-list">
-        <div class="message-comment" v-for="msg in msgs">
-            <div class="top" v-if="msg.msg.is_top">置頂留言</div>
-            <div class="name">姓名：{{ msg.msg.name }}</div>
-            <div class="msg-content">內容：{{ msg.msg.del ? "已刪除" : msg.msg.msg }}</div>
-            <div class="created">發表於{{ msg.msg.created_time }}</div>
-            <div class="updated" v-if="msg.msg.updated_time != msg.msg.created_time">{{ msg.msg.del ? "刪除" : "修改" }}於{{ msg.msg.updated_time }}</div>
-            <div class="phone" v-if="msg.msg.show_phone && !msg.msg.del">電話號碼：{{ msg.msg.phone }}</div>
-            <div class="email" v-if="msg.msg.show_email && !msg.msg.del">電子郵件：{{ msg.msg.email }}</div>
-            <div class="image" v-if="!msg.msg.del && msg.msg.avatar_url != null"><img :src="'/user_avatar/' + msg.msg.avatar_url" alt="" width="128px" height="128px"></div>
-            <div class="reply" v-if="msg.msg.reply.trim().length > 0">
-                <div>管理員回復</div>
-                <div>{{ msg.msg.reply }}</div>
+<div class="section-list">
+    <div class="message animate" v-for="(msg, idx) in msgs" :key="msg.msg.id" :data-animate="idx % 2 ? 'slide-left' : 'slide-right'">
+        <div class="avatar">
+            <img v-if="!msg.msg.del && msg.msg.avatar_url != null" :src="'/user_avatar/' + msg.msg.avatar_url">
+        </div>
+
+        <div class="content">
+            <div class="name">
+                {{ msg.msg.name }}
+                <span class="badge badge-danger" v-if="msg.msg.is_top">置頂留言</span>
             </div>
-            <div class="feature" v-if="$root.isAdmin || !msg.msg.del">
-                <div v-if="!$root.isAdmin">
-                    留言序號：
-                    <input type="text" v-model="msg.serial">
+            <div class="comment">{{ msg.msg.del ? "( 此筆留言已刪除 )" : msg.msg.msg }}</div>
+            <div class="admin-reply" v-if="msg.msg.reply.trim().length > 0">
+                <p>管理員回覆：</p>{{ msg.msg.reply }}
+            </div>
+            <div class="info">
+                <div class="date-info">
+                    <div class="date">
+                        <p>發表於 {{ msg.msg.created_time }}</p>
+                    </div>
+                    <div class="edit-date" v-if="msg.msg.updated_time != msg.msg.created_time">
+                        <p>{{ msg.msg.del ? "刪除" : "修改" }}於 {{ msg.msg.updated_time }}</p>
+                    </div>
                 </div>
-                <div>
-                    <button v-if="$root.isAdmin" @click="top(msg)">置頂</button>
-                    <button v-if="!msg.msg.del" @click="edit(msg)">編輯</button>
-                    <button @click="del(msg)">刪除</button>
+                <div class="user-info">
+                    <div class="email icon" v-if="msg.msg.show_email && !msg.msg.del">
+                        <i class="fas fa-envelope"></i>
+                        <p>{{ msg.msg.email }}</p>
+                    </div>
+                    <div class="phone icon" v-if="msg.msg.show_phone && !msg.msg.del">
+                        <i class="fas fa-phone"></i>
+                        <p>{{ msg.msg.phone }}</p>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="feature" v-if="$root.isAdmin || !msg.msg.del">
+            <div class="dropdownicon" @click="dropdown">
+                <i class="fas fa-ellipsis-h"></i>
             </div>
 
-            <message-board-edit-form v-if="msg.isEdit" @editmsg_event="processEditMsg" :msgdata="msg"></message-board-edit-form>
-            <hr>
+            <div class="dropdown">
+                <input v-if="!$root.isAdmin" class="w-100 text-center" type="text" v-model="msg.serial"
+                    placeholder="留言序號">
+                <div class="btn-area">
+                    <button class="btn btn-outline-danger w-100" v-if="$root.isAdmin && msg.msg.is_top" @click="top(msg)">取消置頂</button>
+                    <button class="btn btn-outline-danger w-100" v-else-if="$root.isAdmin" @click="top(msg)">置頂</button>
+                    <button class="btn btn-outline-danger w-100" v-if="!msg.msg.del" @click="edit(msg)">編輯</button>
+                    <button class="btn btn-danger w-100" @click="del(msg)">刪除</button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 </script>
 
 <script type="text/x-template" id="MessageBoardTemplate">
-    <div>
-        <div class="header-msg">
-            <p v-if="$root.isAdmin">留言管理</p>
-            <p v-else>遊客留言板區塊</p>
+    <div class="container section">
+        <div class="section-title">
+            <div class="title">
+                <i class="fas fa-comment fa-lg"></i>
+                <p v-if="$root.isAdmin">留言管理</p>
+                <p v-else-if="isShowForm && (msg == null || !msg.isEdit)">新增留言</p>
+                <p v-else-if="isShowForm && msg.isEdit">編輯留言</p>
+                <p v-else>玩家留言板</p>
+            </div>
+
+            <div class="section-button d-flex justify-contents-center align-items-center h-100 text-danger" v-if="!$root.isAdmin" @click="toggleForm">
+                <i class="fas fa-plus-circle fa-2x" v-if="!isShowForm"></i>
+                <i class="fas fa-arrow-alt-circle-left fa-2x" v-if="isShowForm"></i>
+            </div>
+            <div class="section-button d-flex justify-contents-center align-items-center h-100 text-danger" v-else @click="isShowForm = false">
+                <i class="fas fa-arrow-alt-circle-left fa-2x" v-if="isShowForm"></i>
+            </div>
         </div>
-        <button v-if="!$root.isAdmin" @click="isShowAddMsgForm = !isShowAddMsgForm">
-            <p v-if="!isShowAddMsgForm">新增留言</p>
-            <p v-else>關閉留言表單</p>
-        </button>
-        <message-board-form v-if="isShowAddMsgForm" @addmsg_event="processAddMsg"></message-board-form>
-        <message-board-list ref="messageBoardListRef"></message-board-list>
+
+        <message-board-form v-if="isShowForm" @addmsg_event="closeForm" @editmsg_event="closeForm" :msgdata="msg"></message-board-form>
+        <message-board-list v-show="!isShowForm" ref="messageBoardListRef" @editmsg_event="openEditForm"></message-board-list>
+        
+        <div class="mouse">
+            <i class="fas fa-mouse fa-2x"></i>
+            <i class="fas fa-arrow-down fa-2x"></i>
+        </div>
     </div>
 </script>
 
 <script type="text/x-template" id="MatchTemplate">
-    <div id="match">
-        <div class="header-news">
-            <p v-if="$root.isAdmin">賽制管理</p>
-            <p v-else>最新消息與賽制公告區塊</p>
-        </div>
-        <button v-if="!$root.isAdmin" @click="isShowAddPlayerForm = !isShowAddPlayerForm">
-            <p v-if="!isShowAddPlayerForm">玩家參賽</p>
-            <p v-else>關閉參賽表單</p>
-        </button>
+    <div class="container section">
+        <div class="section-title">
+            <div class="title">
+                <i class="fas fa-gamepad fa-lg"></i>
+                <p v-if="$root.isAdmin">賽制管理</p>
+                <p v-else>玩家參賽</p>
+                <button class="btn btn-danger" @click="pair" v-if="$root.isAdmin">
+                    隨機配對
+                </button>
+            </div>
 
-        <form v-if="isShowAddPlayerForm" @submit.prevent="handleSubmit" method="post">
-            <div>姓名：<input type="text" v-model="name" required></div>
-            <div>E-mail：<input type="email" v-model="email" required></div>
-            <div>電話：<input type="text" pattern="^\d(?:[-.]*\d){9,9}$" v-model="phone" required></div>
-            <input type="file" @change="onFileChange">
-            <div>
-                <input type="submit" value="參賽">
+            <div class="section-button d-flex justify-contents-center align-items-center h-100 text-danger" v-if="!$root.isAdmin" @click="toggleForm">
+                <i class="fas fa-user-plus fa-2x" v-if="!isShowForm"></i>
+                <i class="fas fa-arrow-alt-circle-left fa-2x" v-if="isShowForm"></i>
+            </div>
+        </div>
+
+        <div class="section-list pair-list" v-if="!isShowForm">
+            <div class="unpair p-3 w-100" v-if="alones.length > 0">
+                <div class="w-100 text-center col-12">
+                    <h2 class="my-3">待配對玩家</h2>
+                </div>
+                <div class="unpair-user col-2" v-for="alone in alones">
+                    <img :src="'/match_img/' + alone.img">
+                    <p>{{ alone.name }}</p>
+                </div>
+            </div>
+            <hr class="w-100" v-if="alones.length > 0 && matchs.length > 0">
+            <div class="pair-list w-100 p-4">
+                <div class="pair-card my-2 p-3 rounded" v-for="match in matchs">
+                    <div class="first">
+                        <img :src="'/match_img/' + match[0].img">
+                        <p>{{ match[0].name }}</p>
+                    </div>
+                    <p>VS</p>
+                    <div class="second">
+                        <img :src="'/match_img/' + match[1].img">
+                        <p>{{ match[1].name }}</p>
+                    </div>
+    
+                    <button class="btn btn-danger" @click="unpair(match[0].team_id)" v-if="$root.isAdmin">
+                        解除配對
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <form class="section-form" v-if="isShowForm" @submit.prevent="handleSubmit">
+            <h1>報名參賽</h1>
+
+            <div class="input-area">
+                <div class="input-boxs">
+                    <div class="input-box">
+                        <input id="match-name" type="text" v-model="name" required>
+                        <label for="match-name">玩家姓名</label>
+                    </div>
+                    <div class="input-box">
+                        <input id="match-email" type="text" v-model="email" required>
+                        <label for="match-email">E-mail</label>
+                    </div>
+                    <div class="input-box">
+                        <input id="match-phone" type="text" v-model="phone" required>
+                        <label for="match-phone">連絡電話</label>
+                    </div>
+                    <div class="file-input-box">
+                        <div class="box">
+                            <label class="btn">
+                                <input type="file"
+                                    accept="image/png, image/gif, image/jpeg" @change="onFileChange">
+                                <i class="fas fa-image"></i>上傳圖片</label>
+                            <p>{{ imgtext }}</p>
+                        </div>
+    
+                        <div class="preview">
+                            <img id="preview_img" v-if="avatar_url != ''" :src="avatar_url" alt="">
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="input-button">
+                    <input class="btn btn-danger" type="submit" value="參賽">
+                </div>
             </div>
         </form>
 
-        <div class="match-block">
-            <div class="match-item" v-for="match in matchs">
-                <img :src="'/match_img/' + match[0].img" width="128px" height="128px" alt="">
-                <span>{{ match[0].name }}</span>
-                <span> VS </span>
-                <img :src="'/match_img/' + match[1].img" width="128px" height="128px" alt="">
-                <span>{{ match[1].name }}</span>
-                <button v-if="$root.isAdmin" @click="unpair(match[0].team_id)">解除配對</button>
-            </div>
-            <div class="match-item" v-for="alone in alones">
-                <img :src="'/match_img/' + alone.img" width="128px" height="128px" alt="">
-                <span>{{ alone.name }}，配對中</span>
-            </div>
-            <button v-if="$root.isAdmin" @click="pair">亂數配對</button>
+        <div class="mouse">
+            <i class="fas fa-mouse fa-2x"></i>
+            <i class="fas fa-arrow-down fa-2x"></i>
         </div>
     </div>
 </script>
 
-<body class="container">
-    <div id="app">
-        <div v-if="isAdmin">管理者模式</div>
-        <nav>
-            <div>玩家留言</div>
-            <div>玩家參賽</div>
-            <div>網站管理</div>
-        </nav>
+<body class="vw-100 vh-100 overflow-hidden">
+    <div id="app" class="vw-100 vh-100" @wheel="onWheel">
+        <header :class="{active: isAdmin}">
+            <nav class="shadow">
+                <img src="./img/01_LOGO.png" alt="">
+                <div class="nav-item">
+                    <a href="#index-bg" v-if="!isAdmin">首頁</a>
+                    <a href="#message-board" v-if="isAdmin">留言管理</a>
+                    <a href="#message-board" v-else>玩家留言</a>
+                    <a href="#battle" v-if="isAdmin">賽制管理</a>
+                    <a href="#battle" v-else>玩家參賽</a>
+                    <a href="#" v-show="isAdmin" @click="updateAdminStatus(false)">登出</a>
+                    <a href="#login" v-show="!isAdmin">網站管理</a>
+                </div>
+            </nav>
+        </header>
 
-        <login-form v-if="!isAdmin" @update_admin_status="updateAdminStatus"></login-form>
-        <message-board></message-board>
+        <div id="main-carousel" class="carousel vert slide w-100 h-100" data-interval="false" data-wrap="false">
+            <div class="carousel-inner w-100 h-100">
+                <div id="index-bg" class="carousel-item w-100 h-100 user-select-none" v-if="!isAdmin">
+                    <div class="w-100 h-100">
+                        <img src="./img/3675065.jpg">
 
-        <match></match>
+                        <div class="mask-area">
+                            <h1 class="title">
+                                Welcome
+                                <br>
+                                to
+                                <br>
+                                Shanghai
+                                <br>
+                                Battle!
+                            </h1>
+                        </div>
+
+                        <div class="mouse text-white">
+                            <i class="fas fa-mouse fa-2x"></i>
+                            <i class="fas fa-arrow-down fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="message-board" class="carousel-item w-100 h-100">
+                    <message-board></message-board>
+                </div>
+
+                <div id="battle" class="carousel-item w-100 h-100">
+                    <match></match>
+                </div>
+
+                <div id="login" class="carousel-item w-100 h-100" v-if="!isAdmin">
+                    <login-form v-if="!isAdmin" @update_admin_status="updateAdminStatus"></login-form>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Copyright &copy; ShanghaiBattle 2022 All Rights Reserved.
+        </footer>
     </div>
 </body>
 
+
 <script>
+    const carouselChildren = $("#main-carousel .carousel-inner").children().map((idx, el) => el.id);
+    const adminCarouselChildren = carouselChildren.filter((idx, el) => idx != 0 && idx != 3);
+
     const loginFormComponent = {
         template: "#LoginFormTemplate",
         data() {
@@ -179,30 +376,34 @@
         },
         methods: {
             refreshNum: function () {
-                this.verNum = Math.round(Math.random() * 9000) + 1000;
+                this.verNum = `/api/Captcha.php?t=${new Date().getTime()}`
             },
             handleSubmit: function () {
                 const _this = this;
-                if (_this.userInputVerNum != _this.verNum) {
-                    alert("驗證碼錯誤")
-                    return;
-                }
+                $.post("/api/ChkCode.php", { chkcode: _this.userInputVerNum }, res => {
+                    let result = JSON.parse(res);
+                    if (!result.status) {
+                        alert("驗證碼錯誤");
+                        return;
+                    }
 
-                let data = {
-                    "acc": _this.account,
-                    "pw": _this.password
-                }
-                $.post("/api/Login.php", data)
-                    .done(res => {
-                        let result = JSON.parse(res);
+                    let data = {
+                        "acc": _this.account,
+                        "pw": _this.password
+                    }
 
-                        if (!result.status) {
-                            alert("帳號密碼錯誤");
-                            return;
-                        }
+                    $.post("/api/Login.php", data)
+                        .done(res => {
+                            let result = JSON.parse(res);
 
-                        _this.$emit("update_admin_status", true);
-                    });
+                            if (!result.status) {
+                                alert("帳號密碼錯誤");
+                                return;
+                            }
+
+                            _this.$emit("update_admin_status", true);
+                        });
+                });
             },
             reset: function () {
                 this.userInputVerNum = "";
@@ -215,24 +416,55 @@
 
     const messageBoardFormComponent = {
         template: "#MessageBoardFormTemplate",
+        props: ["msgdata"],
         data() {
             return {
+                id: 0,
                 name: "",
                 email: "",
                 phone: "",
                 msg: "",
                 avatar: null,
+                avatar_url: "",
                 serial: "",
                 show_mail: true,
-                show_phone: true
+                show_phone: true,
+                reply: "",
+                imgtext: "尚未選擇圖片",
+                isEdit: false
+            }
+        },
+        mounted() {
+            if (this.msgdata != undefined) {
+                let tmp = this.msgdata.msg;
+                this.isEdit = this.msgdata.isEdit;
+                this.id = tmp.id;
+                this.name = tmp.name;
+                this.email = tmp.email;
+                this.phone = tmp.phone;
+                this.avatar_url = '/user_avatar/' + tmp.avatar_url;
+                this.serial = tmp.serial;
+                this.msg = tmp.msg;
+                this.show_mail = tmp.show_email;
+                this.show_phone = tmp.show_phone;
+                this.reply = tmp.reply;
             }
         },
         methods: {
             handleSubmit: function () {
                 const _this = this;
-
                 if (_this.serial.length != 4) {
                     alert("留言序號長度必須為4");
+                    return;
+                }
+
+                if (!(_this.email.includes("@") && _this.email.includes("."))) {
+                    alert("Email認證錯誤");
+                    return;
+                }
+
+                if (!/^\d(?:[-.]*\d){9,9}$/.test(_this.phone)) {
+                    alert("連絡電話格式錯誤");
                     return;
                 }
 
@@ -245,6 +477,24 @@
                 formData.append("avatar", _this.avatar);
                 formData.append("show_mail", _this.show_mail | 0);
                 formData.append("show_phone", _this.show_phone | 0);
+
+                if (_this.msgdata != undefined) {
+                    formData.append("id", _this.id);
+                    formData.append("avatar_url", _this.msgdata.msg.avatar_url);
+                    formData.append("reply", _this.reply);
+                    $.ajax({
+                        url: "/api/EditMsg.php",
+                        type: "post",
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: res => {
+                            alert("編輯成功");
+                            _this.$emit("editmsg_event");
+                        }
+                    });
+                    return;
+                }
 
                 $.ajax({
                     url: "/api/AddMsg.php",
@@ -259,63 +509,21 @@
                 });
             },
             onFileChange: function (e) {
+                const _this = this;
                 let files = e.target.files || e.dataTransfer.files;
                 if (!files.length)
                     return;
-                this.avatar = files[0];
-                console.log(this.avatar);
+                _this.avatar = files[0];
+                _this.imgtext = _this.avatar.name;
+
+                let fileReader = new FileReader();
+                fileReader.onload = function (data) {
+                    _this.avatar_url = data.target.result;
+                }
+                fileReader.readAsDataURL(files[0]);
             }
         }
     }
-
-    const messageBoardEditFormComponent = {
-        template: "#MessageBoardEditFormTemplate",
-        props: ["msgdata"],
-        data() {
-            return {
-                id: 0,
-                name: "",
-                email: "",
-                phone: "",
-                msg: "",
-                show_mail: true,
-                show_phone: true,
-                reply: ""
-            }
-        },
-        mounted() {
-            let tmp = this.msgdata.msg;
-            this.id = tmp.id;
-            this.name = tmp.name;
-            this.email = tmp.email;
-            this.phone = tmp.phone;
-            this.msg = tmp.msg;
-            this.show_mail = tmp.show_email;
-            this.show_phone = tmp.show_phone;
-            this.reply = tmp.reply;
-        },
-        methods: {
-            handleSubmit: function () {
-                const _this = this;
-                let data = {
-                    id: this.id,
-                    name: this.name,
-                    email: this.email,
-                    phone: this.phone,
-                    msg: this.msg,
-                    show_email: this.show_mail | 0,
-                    show_phone: this.show_phone | 0,
-                    reply: this.reply
-                };
-                $.post("/api/EditMsg.php", data)
-                    .done(res => {
-                        _this.$emit("editmsg_event");
-                    });
-                console.log(data);
-            }
-        }
-    }
-
 
     const messageBoardListComponent = {
         template: "#MessageBoardListTemplate",
@@ -341,13 +549,11 @@
                         _this.msgs.push(result);
                     })
                 });
-            },
-            processEditMsg: function () {
-                this.refreshMsgs();
+                $(".dropdown").removeClass("active");
             },
             top: function (msg) {
                 const _this = this;
-                $.post("/api/TopMsg.php", { id: msg.msg.id })
+                $.post("/api/TopMsg.php", { id: msg.msg.id, isTop: msg.msg.is_top })
                     .done(res => _this.refreshMsgs());
             },
             edit: function (msg) {
@@ -357,6 +563,7 @@
                 }
 
                 msg.isEdit = true;
+                this.$emit("editmsg_event", msg);
             },
             del: function (msg) {
                 const _this = this;
@@ -371,6 +578,19 @@
 
                 $.post("/api/DeleteMsg.php", { id: msg.msg.id, isAdmin: _this.$root.isAdmin | 0 })
                     .done(res => _this.refreshMsgs());
+            },
+            dropdown: function (event) {
+                let el = $(event.target);
+                if (el.is("i")) {
+                    el = $(event.target).closest(".dropdownicon");
+                }
+                el = el.siblings(".dropdown");
+                let hasActive = el.hasClass("active");
+                $(".dropdown").removeClass("active");
+                if (hasActive) {
+                    return;
+                }
+                el.addClass("active");
             }
         }
     }
@@ -379,14 +599,30 @@
         template: "#MessageBoardTemplate",
         data() {
             return {
-                isShowAddMsgForm: false
+                msg: null,
+                isShowForm: false
             }
         },
         methods: {
-            processAddMsg: function () {
-                this.isShowAddMsgForm = false;
-                console.log(this.$refs.messageBoardListRef);
-                this.$refs.messageBoardListRef.refreshMsgs();
+            closeForm: function () {
+                this.isShowForm = false;
+                this.$nextTick(() => {
+                    console.log(this.$refs.messageBoardListRef);
+                    this.$refs.messageBoardListRef.refreshMsgs();
+                })
+            },
+            openEditForm: function (msg) {
+                this.msg = msg;
+                this.isShowForm = true;
+            },
+            toggleForm: function () {
+                this.isShowForm = !this.isShowForm;
+                this.msg = null;
+            }
+        },
+        watch: {
+            isShowForm() {
+                animateTimeout();
             }
         }
     }
@@ -397,11 +633,13 @@
             return {
                 matchs: [],
                 alones: [],
-                isShowAddPlayerForm: false,
+                isShowForm: false,
                 name: "",
                 email: "",
                 phone: "",
-                img: null
+                img: null,
+                avatar_url: "",
+                imgtext: "尚未選擇圖片",
             }
         },
         mounted() {
@@ -438,16 +676,34 @@
                     .done(res => _this.refresh())
             },
             onFileChange: function (e) {
+                const _this = this;
                 let files = e.target.files || e.dataTransfer.files;
                 if (!files.length)
                     return;
-                this.img = files[0];
+                _this.img = files[0];
+                _this.imgtext = _this.img.name;
+
+                let fileReader = new FileReader();
+                fileReader.onload = function (data) {
+                    _this.avatar_url = data.target.result;
+                }
+                fileReader.readAsDataURL(files[0]);
             },
             handleSubmit: function () {
                 const _this = this;
 
                 if (_this.img == null) {
                     alert("請上傳頭像");
+                    return;
+                }
+
+                if (!(_this.email.includes("@") && _this.email.includes("."))) {
+                    alert("Email認證錯誤");
+                    return;
+                }
+
+                if (!/^\d(?:[-.]*\d){9,9}$/.test(_this.phone)) {
+                    alert("連絡電話格式錯誤");
                     return;
                 }
 
@@ -465,7 +721,7 @@
                     processData: false,
                     success: res => {
                         alert("新增成功");
-                        _this.isShowAddPlayerForm = false;
+                        _this.isShowForm = false;
                         _this.name = "";
                         _this.email = "";
                         _this.phone = "";
@@ -474,13 +730,15 @@
                         _this.refresh();
                     }
                 });
+            },
+            toggleForm: function () {
+                this.isShowForm = !this.isShowForm;
             }
         }
     }
 
     Vue.component("login-form", loginFormComponent);
     Vue.component("message-board-form", messageBoardFormComponent);
-    Vue.component("message-board-edit-form", messageBoardEditFormComponent);
     Vue.component("message-board-list", messageBoardListComponent);
     Vue.component("message-board", messageBoardComponent);
     Vue.component("match", matchComponent);
@@ -489,15 +747,127 @@
         el: "#app",
         data() {
             return {
-                isAdmin: false
+                isAdmin: false,
+                onChangeCarousel: false
             }
         },
         methods: {
             updateAdminStatus: function (status) {
-                this.isAdmin = status;
+                const _this = this;
+                let target = status ? "#message-board" : "#index-bg";
+                console.log(target);
+                _this.isAdmin = status;
+                setTimeout(() => {
+                    window.location.hash = target;
+                    _this.carouselTo(target, false);
+                    if (!status) alert("登出成功！")
+                }, 400);
+            },
+            onWheel: function (e) {
+                const _this = this;
+                let parent = $(e.target).closest(".section-list");
+
+                if ($(e.target).is("textarea")) {
+                    return;
+                }
+
+                if (parent.length > 0 && (parent.get(0).scrollHeight > parent.height())) {
+                    return;
+                }
+
+                if (_this.onChangeCarousel) {
+                    return
+                }
+
+                let childrenArr = _this.isAdmin ? adminCarouselChildren.toArray() : carouselChildren.toArray();
+                let isDown = (e.wheelDelta <= 0 || e.detail > 0);
+                let hash = window.location.hash.replace("#", "") || "index-bg";
+                let idx = childrenArr.indexOf(hash);
+
+                if (!isDown && idx < 1) {
+                    return;
+                }
+
+                if (isDown && idx + 1 >= childrenArr.length) {
+                    window.scrollTo({
+                        top: document.body.scrollHeight,
+                        behavior: 'smooth',
+                    });
+                    return;
+                }
+
+                if (!isDown && (idx + 1 >= childrenArr.length && document.documentElement.scrollTop > 0)) {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth',
+                    });
+                    return;
+                }
+
+                _this.onChangeCarousel = true;
+                window.location.hash = `#${childrenArr[isDown ? idx + 1 : idx - 1]}`;
+                setTimeout(() => _this.onChangeCarousel = false, 650);
+            },
+            carouselTo: function (hash, animate = true) {
+                let idx = $(hash).index("#main-carousel .carousel-item");
+                if (idx == -1) {
+                    window.location.hash = "#index-bg";
+                    return;
+                }
+
+                if (!this.isAdmin) {
+                    if (idx != 0) {
+                        $("header").addClass("active");
+                    } else {
+                        $("header").removeClass("active")
+                    }
+                }
+
+                if (animate) {
+                    $("#main-carousel").carousel(idx);
+                    console.log(idx);
+                    animateTimeout();
+                    return;
+                }
+
+                $(".carousel-item").removeClass("active");
+                $(hash).addClass("active");
+                animateTimeout();
             }
         }
     });
+
+    $(document).ready(() => {
+        vue.carouselTo(window.location.hash || "#index-bg", false);
+        window.scrollTo(0, 0);
+        animate();
+    });
+
+    $(window).on("hashchange", e => vue.carouselTo(window.location.hash));
+
+    $(window).click(e => {
+        if ($(e.target).closest(".dropdownicon").length == 0 && $(e.target).closest(".dropdown").length == 0) {
+            $(".dropdown").removeClass("active");
+        }
+    });
+
+    function animateTimeout() {
+        setTimeout(() => {
+            animate();
+        }, 750);
+    }
+
+    function animate() {
+        var animates = $(".animate");
+        animates.each((idx, el) => {
+            let element = $(el);
+            if (element.hasClass("active")) return;
+            if (element.closest(".carousel-item").hasClass("active")) {
+                element.addClass("active");
+                return;
+            }
+        })
+    }
 </script>
 
 </html>
