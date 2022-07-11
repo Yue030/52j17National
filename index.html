@@ -224,14 +224,14 @@
                 <div class="w-100 text-center col-12">
                     <h2 class="my-3">待配對玩家</h2>
                 </div>
-                <div class="unpair-user col-2" v-for="alone in alones">
+                <div class="unpair-user col-2" v-for="alone in alones" :key="alone.id">
                     <img :src="'/match_img/' + alone.img">
                     <p>{{ alone.name }}</p>
                 </div>
             </div>
             <hr class="w-100" v-if="alones.length > 0 && matchs.length > 0">
             <div class="pair-list w-100 p-4">
-                <div class="pair-card my-2 p-3 rounded" v-for="match in matchs">
+                <div class="pair-card my-2 p-3 rounded" v-for="match in matchs" :key="match[0].team_id">
                     <div class="first">
                         <img :src="'/match_img/' + match[0].img">
                         <p>{{ match[0].name }}</p>
@@ -726,8 +726,9 @@
                         _this.email = "";
                         _this.phone = "";
                         _this.img = null;
+                        _this.avatar_url = "";
+                        _this.imgtext = "尚未選擇圖片";
                         _this.pair();
-                        _this.refresh();
                     }
                 });
             },
