@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 11, 2022 at 01:08 PM
+-- Generation Time: Jul 11, 2022 at 03:48 PM
 -- Server version: 10.4.24-MariaDB
 -- PHP Version: 8.0.19
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `messageboard` (
   `id` int(11) UNSIGNED NOT NULL,
-  `name` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `phone` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `msg` text COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE `messageboard` (
 
 CREATE TABLE `team` (
   `id` int(10) UNSIGNED NOT NULL,
-  `name` varchar(15) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `tel` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `mail` varchar(15) COLLATE utf8mb4_unicode_ci NOT NULL,
   `img` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
