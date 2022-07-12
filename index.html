@@ -823,9 +823,9 @@
                         $("header").removeClass("active")
                     }
                 }
-
+                window.scrollTo(0, 0);
                 if (animate) {
-                    $("#main-carousel").carousel(idx);
+                    setTimeout(() => $("#main-carousel").carousel(idx), 50);
                     console.log(idx);
                     animateTimeout();
                     return;
@@ -840,7 +840,6 @@
 
     $(document).ready(() => {
         vue.carouselTo(window.location.hash || "#index-bg", false);
-        window.scrollTo(0, 0);
         animate();
     });
 
