@@ -74,7 +74,7 @@
                     </div>
                 </div>
                 <div class="input-box">
-                    <input id="message-code" type="number" v-model="serial" maxlength="4" required>
+                    <input id="message-code" type="number" v-model="serial" @keypress="$root.validateInputNumber" required>
                     <label for="message-code">留言序號</label>
                 </div>
                 <div class="file-input-box">
@@ -294,7 +294,7 @@
     </div>
 </script>
 
-<body class="vw-100 vh-100 overflow-hidden">
+<body class="vw-100 vh-100 overflow-hidden  user-select-none">
     <div id="app" class="vw-100 vh-100" @wheel="onWheel">
         <header :class="{active: isAdmin}">
             <nav class="shadow">
@@ -313,7 +313,7 @@
 
         <div id="main-carousel" class="carousel vert slide w-100 h-100" data-interval="false" data-wrap="false">
             <div class="carousel-inner w-100 h-100">
-                <div id="index-bg" class="carousel-item w-100 h-100 user-select-none" v-if="!isAdmin">
+                <div id="index-bg" class="carousel-item w-100 h-100" v-if="!isAdmin">
                     <div class="w-100 h-100">
                         <img src="./img/3675065.jpg">
 
@@ -404,12 +404,6 @@
                             _this.$emit("update_admin_status", true);
                         });
                 });
-            },
-            reset: function () {
-                this.userInputVerNum = "";
-                this.account = "";
-                this.password = "";
-                this.refreshNum();
             }
         }
     };
@@ -606,10 +600,7 @@
         methods: {
             closeForm: function () {
                 this.isShowForm = false;
-                this.$nextTick(() => {
-                    console.log(this.$refs.messageBoardListRef);
-                    this.$refs.messageBoardListRef.refreshMsgs();
-                })
+                this.$nextTick(() => this.$refs.messageBoardListRef.refreshMsgs())
             },
             openEditForm: function (msg) {
                 this.msg = msg;
@@ -630,22 +621,25 @@
     const matchComponent = {
         template: "#MatchTemplate",
         data() {
-            return {
-                matchs: [],
-                alones: [],
-                isShowForm: false,
-                name: "",
-                email: "",
-                phone: "",
-                img: null,
-                avatar_url: "",
-                imgtext: "尚未選擇圖片",
-            }
+            return this.initData();
         },
         mounted() {
             this.refresh();
         },
         methods: {
+            initData: function () {
+                return {
+                    matchs: [],
+                    alones: [],
+                    isShowForm: false,
+                    name: "",
+                    email: "",
+                    phone: "",
+                    img: null,
+                    avatar_url: "",
+                    imgtext: "尚未選擇圖片",
+                }
+            },
             refresh: function () {
                 const _this = this;
                 _this.matchs.splice(0);
@@ -721,13 +715,7 @@
                     processData: false,
                     success: res => {
                         alert("新增成功");
-                        _this.isShowForm = false;
-                        _this.name = "";
-                        _this.email = "";
-                        _this.phone = "";
-                        _this.img = null;
-                        _this.avatar_url = "";
-                        _this.imgtext = "尚未選擇圖片";
+                        Object.assign(_this.$data, _this.initData());
                         _this.pair();
                     }
                 });
@@ -756,7 +744,6 @@
             updateAdminStatus: function (status) {
                 const _this = this;
                 let target = status ? "#message-board" : "#index-bg";
-                console.log(target);
                 _this.isAdmin = status;
                 setTimeout(() => {
                     window.location.hash = target;
@@ -826,7 +813,6 @@
                 window.scrollTo(0, 0);
                 if (animate) {
                     setTimeout(() => $("#main-carousel").carousel(idx), 50);
-                    console.log(idx);
                     animateTimeout();
                     return;
                 }
@@ -834,6 +820,11 @@
                 $(".carousel-item").removeClass("active");
                 $(hash).addClass("active");
                 animateTimeout();
+            },
+            validateInputNumber: function (e) {
+                if (!/[0-9]+/.test(e.key)) {
+                    e.preventDefault();
+                }
             }
         }
     });
